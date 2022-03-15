@@ -10,36 +10,42 @@ import (
 )
 
 type zapLogger struct {
-	depth int
+	syncer     func()
+	underlying *zap.Logger
 	*zap.SugaredLogger
 }
 
-func (l zapLogger) Print(v ...interface{}) {
+func (l *zapLogger) Print(v ...interface{}) {
 	l.Info(v...)
 }
 
-func (l zapLogger) Printf(format string, v ...interface{}) {
+func (l *zapLogger) Printf(format string, v ...interface{}) {
 	l.Infof(format, v...)
 }
 
-func (l zapLogger) With(v ...interface{}) log.Logger {
-	var _logger = l.SugaredLogger
-	if l.depth > 0 {
-		_logger = _logger.Desugar().WithOptions(zap.AddCallerSkip(l.depth)).Sugar()
-	}
-	return zapLogger{SugaredLogger: _logger.With(v...)}
+func (l *zapLogger) With(v ...interface{}) log.Logger {
+	var s = l.SugaredLogger.With(v...)
+	return &zapLogger{SugaredLogger: s, underlying: s.Desugar(), syncer: l.syncer}
 }
 
-func (l zapLogger) WithName(name string) log.Logger {
-	var _logger = l.SugaredLogger
-	if l.depth > 0 {
-		_logger = _logger.Desugar().WithOptions(zap.AddCallerSkip(l.depth)).Sugar()
-	}
-	return zapLogger{SugaredLogger: _logger.Named(name)}
+func (l *zapLogger) WithName(name string) log.Logger {
+	var u = l.underlying.Named(name)
+	return &zapLogger{SugaredLogger: u.Sugar(), underlying: u, syncer: l.syncer}
 }
 
-func (l zapLogger) StdLogger() *sysLog.Logger {
+func (l *zapLogger) AddDepth(depth int) log.Logger {
+	var u = l.underlying.WithOptions(zap.AddCallerSkip(depth))
+	return &zapLogger{SugaredLogger: u.Sugar(), underlying: u, syncer: l.syncer}
+}
+
+func (l *zapLogger) StdLogger() *sysLog.Logger {
 	return zap.NewStdLog(l.SugaredLogger.Desugar())
+}
+
+func (l *zapLogger) Sync() {
+	if l.syncer != nil {
+		l.syncer()
+	}
 }
 
 func New(opts Options) (logger log.Logger, sync func(), err error) {
@@ -67,7 +73,6 @@ func New(opts Options) (logger log.Logger, sync func(), err error) {
 	var _logger = zap.New(
 		zapcore.NewTee(cores...),
 		zap.AddCaller(),
-		zap.AddCallerSkip(1),
 		zap.AddStacktrace(
 			zap.LevelEnablerFunc(func(lvl zapcore.Level) bool { return lvl >= zapcore.DPanicLevel }),
 		),
@@ -80,5 +85,5 @@ func New(opts Options) (logger log.Logger, sync func(), err error) {
 			}
 		}
 	}
-	return &zapLogger{SugaredLogger: _logger.Sugar()}, syncer, nil
+	return &zapLogger{SugaredLogger: _logger.Sugar(), underlying: _logger, syncer: syncer}, syncer, nil
 }

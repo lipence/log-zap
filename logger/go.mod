@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/fatih/color v1.13.0
-	github.com/lipence/log v0.1.0
+	github.com/lipence/log v0.1.3
 	go.uber.org/zap v1.21.0
 )
 

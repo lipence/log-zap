@@ -8,8 +8,8 @@ github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYF
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/lipence/log v0.1.0 h1:wpFes7RzDjxWEhSBUAm1QMnt4Qd8xIZ72Eb7sAYiijU=
-github.com/lipence/log v0.1.0/go.mod h1:crzyuSilFqrstFLyCW7HSTSQWgyV7R/eZ8ubvaOA708=
+github.com/lipence/log v0.1.3 h1:gjTkiUonF0m4yfs0j99sjXljp9tVP0f53X3YZZECzOU=
+github.com/lipence/log v0.1.3/go.mod h1:crzyuSilFqrstFLyCW7HSTSQWgyV7R/eZ8ubvaOA708=
 github.com/mattn/go-colorable v0.1.9 h1:sqDoxXbdeALODt0DAeJCVp38ps9ZogZEAXjus69YV3U=
 github.com/mattn/go-colorable v0.1.9/go.mod h1:u6P/XSegPjTcexA+o6vUJrdnUu04hMope9wVRipJSqc=
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=

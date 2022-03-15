@@ -6,7 +6,6 @@ import (
 
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-log-go-sdk/producer"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -147,7 +146,7 @@ func (g *urlGenerator) Generate(argStore func(string) (string, bool)) (string, e
 	{
 		var endpoint string
 		if endpoint, ok = argStore(AliyunSLSConfigEndpoint); !ok {
-			return "", errors.New("`Endpoint` not optional")
+			return "", fmt.Errorf("`Endpoint` not optional")
 		}
 		if scheme, host, err := g.parseEndpoint(endpoint); err == nil {
 			outputPath.Host = host
@@ -159,28 +158,28 @@ func (g *urlGenerator) Generate(argStore func(string) (string, bool)) (string, e
 	{
 		var source string
 		if source = g.source; source == "" {
-			return "", errors.New("`Source` not optional")
+			return "", fmt.Errorf("`Source` not optional")
 		}
 		outputQuery.Set(AliyunSLSParamSource, source)
 	}
 	{
 		var ak, sk string
 		if ak, ok = argStore(AliyunSLSConfigAccessKeyID); !ok {
-			return "", errors.New("`AccessKeyID` not optional")
+			return "", fmt.Errorf("`AccessKeyID` not optional")
 		}
 		if sk, ok = argStore(AliyunSLSConfigAccessKeySecret); !ok {
-			return "", errors.New("`AccessKeySecret` not optional")
+			return "", fmt.Errorf("`AccessKeySecret` not optional")
 		}
 		outputPath.User = url.UserPassword(ak, sk)
 	}
 	{
 		var project, logStore string
 		if project, ok = argStore(AliyunSLSConfigProject); !ok {
-			return "", errors.New("`Project` not optional")
+			return "", fmt.Errorf("`Project` not optional")
 
 		}
 		if logStore, ok = argStore(AliyunSLSConfigLogStore); !ok {
-			return "", errors.New("`LogStore` not optional")
+			return "", fmt.Errorf("`LogStore` not optional")
 		}
 		outputQuery.Set(AliyunSLSParamProject, project)
 		outputQuery.Set(AliyunSLSParamLogStore, logStore)
