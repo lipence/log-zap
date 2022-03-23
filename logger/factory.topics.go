@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	ZapTopicConfigEnable   = "APP_LOG_Enable"
-	ZapTopicConfigEntries  = "APP_LOG_Entries"
-	ZapTopicConfigProvider = "APP_LOG_%sProvider"
+	ZapTopicConfigEnable   = "Enable"
+	ZapTopicConfigEntries  = "Entries"
+	ZapTopicConfigProvider = "Provider"
 )
 
 func WordMeansTrue(text string) bool {
@@ -39,6 +39,10 @@ type paramStoreProxy struct {
 }
 
 func (p *paramStoreProxy) Get(key string) (string, bool) {
+	return p.opts.ParamStore.Get(p.wrap(key))
+}
+
+func (p *paramStoreProxy) wrap(key string) string {
 	var sep string
 	if p.opts.ParamSepStr != "" {
 		sep = p.opts.ParamSepStr
@@ -51,7 +55,7 @@ func (p *paramStoreProxy) Get(key string) (string, bool) {
 	if p.entry != "" {
 		key = p.entry + sep + key
 	}
-	return p.opts.ParamStore.Get(key)
+	return key
 }
 
 func createTopicCore(prefix string, provider string, opts *Options) (core zapcore.Core, closer func(), err error) {
@@ -96,32 +100,33 @@ func createTopicCore(prefix string, provider string, opts *Options) (core zapcor
 }
 
 func topicCoreFactory(opts *Options) (cores []zapcore.Core, closers []func(), err error) {
-	var _argStore = opts.ParamStore
-	if _argStore == nil {
+	var argStore = &paramStoreProxy{opts: opts, entry: opts.ParamEntry, prefix: ""}
+	if opts.ParamStore == nil {
 		return nil, nil, nil
 	}
 	var topicEntries = map[string]string{}
 	// multi topic mode
-	if entryVal, ok := _argStore.Get(ZapTopicConfigEntries); ok && entryVal != "" {
+	if entryVal, ok := argStore.Get(ZapTopicConfigEntries); ok && entryVal != "" {
 		for _, prefix := range strings.Split(entryVal, ",") {
 			var provider string
 			prefix = strings.TrimSpace(prefix)
-			var providerEnv = fmt.Sprintf(ZapTopicConfigProvider, prefix+"_")
-			if provider, ok = _argStore.Get(providerEnv); !ok {
-				return nil, nil, fmt.Errorf("undefined environment variable `%s`", providerEnv)
+			var _argStore = &paramStoreProxy{opts: opts, entry: opts.ParamEntry, prefix: prefix}
+			if provider, ok = _argStore.Get(ZapTopicConfigProvider); !ok {
+				return nil, nil, fmt.Errorf(
+					"undefined environment variable `%s`", _argStore.wrap(ZapTopicConfigProvider))
 			}
 			topicEntries[prefix] = provider
 		}
 	}
 	// single topic mode
-	if enableVal, ok := _argStore.Get(ZapTopicConfigEnable); ok && WordMeansTrue(enableVal) {
+	if enableVal, ok := argStore.Get(ZapTopicConfigEnable); ok && WordMeansTrue(enableVal) {
 		var provider string
-		var providerEnv = fmt.Sprintf(ZapTopicConfigProvider, "")
-		if provider, ok = _argStore.Get(providerEnv); ok {
+		if provider, ok = argStore.Get(ZapTopicConfigProvider); ok {
 			provider = strings.TrimSpace(provider)
 			topicEntries[strings.Title(provider)] = provider
 		} else {
-			return nil, nil, fmt.Errorf("undefined environment variable `%s`", providerEnv)
+			return nil, nil, fmt.Errorf(
+				"undefined environment variable `%s`", argStore.wrap(ZapTopicConfigProvider))
 		}
 	}
 	// load topic
