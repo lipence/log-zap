@@ -32,6 +32,7 @@ type Options struct {
 	ParamEntry    string
 	ParamSepStr   string
 	ParamStore    paramStore
+	EncJSONOnProd bool
 	topicHandlers []topicURLGenerator
 }
 

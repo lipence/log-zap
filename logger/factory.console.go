@@ -95,7 +95,6 @@ func readableEncoder(enableColor bool) zapcore.Encoder {
 }
 
 func consoleCoreFactory(opts *Options) (cores []zapcore.Core, closers []func(), err error) {
-	var consoleEncoderObj = readableEncoder(opts.Mode == ModeDevelop)
 	var ConsoleInfoCloser, ConsoleErrorCloser func()
 	var ConsoleInfoSyncer, ConsoleErrorSyncer zapcore.WriteSyncer
 	if ConsoleInfoSyncer, ConsoleInfoCloser, err = zap.Open("stdout"); err != nil {
@@ -105,16 +104,20 @@ func consoleCoreFactory(opts *Options) (cores []zapcore.Core, closers []func(), 
 		return nil, nil, fmt.Errorf("cant init logger console writeSyncer: stderr: %w", err)
 	}
 	var stdoutMinLevel zapcore.Level
-	if opts.Mode == ModeProduct {
-		stdoutMinLevel = zapcore.InfoLevel
+	var consoleEncoderObj zapcore.Encoder
+	if opts.Mode == ModeProduct && opts.EncJSONOnProd {
+		stdoutMinLevel, consoleEncoderObj = zapcore.InfoLevel, jsonEncoder()
+		cores = append(cores, zapcore.NewCore(consoleEncoderObj, ConsoleInfoSyncer,
+			zap.LevelEnablerFunc(func(lvl zapcore.Level) bool { return lvl >= stdoutMinLevel }),
+		))
 	} else {
-		stdoutMinLevel = zapcore.DebugLevel
+		stdoutMinLevel, consoleEncoderObj = zapcore.DebugLevel, readableEncoder(opts.Mode == ModeDevelop)
+		cores = append(cores, zapcore.NewCore(consoleEncoderObj, ConsoleInfoSyncer,
+			zap.LevelEnablerFunc(func(lvl zapcore.Level) bool { return lvl >= stdoutMinLevel && lvl <= zapcore.InfoLevel }),
+		), zapcore.NewCore(consoleEncoderObj, ConsoleErrorSyncer,
+			zap.LevelEnablerFunc(func(lvl zapcore.Level) bool { return lvl > zapcore.InfoLevel }),
+		))
 	}
-	cores = append(cores, zapcore.NewCore(consoleEncoderObj, ConsoleInfoSyncer,
-		zap.LevelEnablerFunc(func(lvl zapcore.Level) bool { return lvl >= stdoutMinLevel && lvl <= zapcore.InfoLevel }),
-	), zapcore.NewCore(consoleEncoderObj, ConsoleErrorSyncer,
-		zap.LevelEnablerFunc(func(lvl zapcore.Level) bool { return lvl > zapcore.InfoLevel }),
-	))
 	closers = []func(){
 		ConsoleInfoCloser,
 		ConsoleErrorCloser,
